@@ -2,6 +2,7 @@ package edu.du.week10activity
 
 import android.app.Dialog
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
@@ -23,16 +24,22 @@ import com.google.gson.Gson
 
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        private val KEY_LIST = "contact_list"
+    }
+
     private var list = ContactList(ArrayList())
     private var adapter: NameAdapter? = null
     private var useDrawer = false
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
 
-        loadListFromFile()
+        //loadListFromFile()
+        loadListFromSharedPreferences()
         adapter = NameAdapter(list.contacts) { contact: Contact ->
             if (useDrawer) {
                 showDrawer(contact)
@@ -98,7 +105,8 @@ class MainActivity : AppCompatActivity() {
                 contact.name = newName
                 contact.number = newNumber
             }
-            saveListToFile()
+            //saveListToFile()
+            saveListToSharedPreferences()
             adapter?.notifyDataSetChanged()
             dialog.hide()
         }
@@ -121,6 +129,21 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    private fun saveListToSharedPreferences() {
+        val sharedPref: SharedPreferences = getSharedPreferences(
+            getString(R.string.pref_name_contact_storage), Context.MODE_PRIVATE
+        )
+        sharedPref.edit().putString(KEY_LIST, getStringForList(list)).apply()
+    }
+    private fun loadListFromSharedPreferences() {
+        val sharedPref: SharedPreferences = getSharedPreferences(
+            "contact_storage", Context.MODE_PRIVATE
+        )
+        val saved = sharedPref.getString(KEY_LIST, null)
+        if(saved != null) {
+            list = getListForString(saved)
+        }
+    }
     fun saveListToFile() {
         applicationContext.openFileOutput("output.json", MODE_PRIVATE).use {
             it.write(getStringForList(list).toByteArray())
